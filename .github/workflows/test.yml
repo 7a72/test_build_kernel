@@ -52,7 +52,7 @@ jobs:
           cd "/mnt/kernel_workspace"
           
           echo "Sync kernel source"
-          git clone --depth 1 https://github.com/OnePlus-12-Development/android_kernel_qcom_sm8650 -b lineage-22.2 kernel_platform
+          git clone --depth 1 https://github.com/OnePlus-12-Development/android_kernel_oneplus_sm8650 -b lineage-22.2 kernel_platform
           
           echo "Pre-modify"
           rm -rf ./kernel_platform/android/abi_gki_protected_exports_* || echo "No protected exports!"
