@@ -91,7 +91,6 @@ jobs:
           echo "Building the kernel..."
           # python3 build_with_bazel.py -t pineapple gki --config=${{ github.event.inputs.CONFIG }} --lto=${{ github.event.inputs.LTO }} -o "$(pwd)/../out"
           
-          cd kernel_workspace/kernel_platform
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out # Build the kernel itself
           make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out modules_install INSTALL_MOD_PATH=./Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
