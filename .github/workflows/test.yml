@@ -1,0 +1,136 @@
+name: Build OnePlus 12 Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set Swap
+        run: |
+          export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
+          sudo swapoff $SWAP_FILE
+          sudo rm -rf $SWAP_FILE
+          sudo fallocate -l 16G /swap_filex
+          sudo chmod 600 /swap_filex
+          sudo mkswap /swap_filex
+          sudo swapon /swap_filex
+          df -h
+          free -h
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3 git libelf-dev dwarves
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
+          chmod a+x ~/repo
+          sudo mv ~/repo /bin/repo
+
+      - name: Download the Pre-built Toolchain
+        run: |
+          cd $GITHUB_WORKSPACE
+          git clone -q --depth=1 --single-branch https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b clang-r536225 clang
+
+      - name: Set Environment Variable
+        run: |
+          echo "BUILD_TIME=$(date "+%y%m%d%H")" >> $GITHUB_ENV
+          sudo mkdir -p /mnt/kernel_workspace
+          sudo chmod 0777 /mnt/kernel_workspace
+          
+          git config --global user.email "build-user@build-host"
+          git config --global user.name "build-user"
+
+      - name: Sync the Kernel Source Code
+        run: |
+          echo "Changing to directory: /mnt/kernel_workspace..."
+          cd "/mnt/kernel_workspace"
+          
+          echo "Sync kernel source"
+          git clone --depth 1 https://github.com/yaap/kernel_oneplus_sm8650.git -b fifteen kernel_platform
+          
+          echo "Pre-modify"
+          rm -rf ./kernel_platform/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          sed -i 's/check_defconfig//' kernel_platform/build.config.gki
+          sed -i '$s|echo "\$res"|echo "-zsck"|'  kernel_platform/scripts/setlocalversion || true
+
+      - name: Add Configuration Settings
+        run: |
+          echo "Changing to directory: /mnt/kernel_workspace/kernel_platform..."
+          cd "/mnt/kernel_workspace/kernel_platform"
+
+          echo "Adding configuration settings to gki_defconfig..."
+          echo "CONFIG_PID_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_POSIX_MQUEUE=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IPC_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_USER_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_BPF_STREAM_PARSER=y" >> ./arch/arm64/configs/gki_defconfig
+          
+          cat ./arch/arm64/configs/gki_defconfig
+
+      - name: Build the Kernel
+        run: |
+          echo "Changing to configuration directory: /mnt/kernel_workspace/kernel_platform..."
+          cd "/mnt/kernel_workspace/kernel_platform"
+          
+          echo "Clean dirty"
+          git add -A
+          git commit -s -a -m "build"
+          
+          echo "Set Env"
+          export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
+          type clang
+          type lld
+          
+          echo "Building the kernel..."
+          # python3 build_with_bazel.py -t pineapple gki --config=${{ github.event.inputs.CONFIG }} --lto=${{ github.event.inputs.LTO }} -o "$(pwd)/../out"
+          
+          cd kernel_workspace/kernel_platform
+          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
+          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out # Build the kernel itself
+          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out modules_install INSTALL_MOD_PATH=./Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
+          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out install INSTALL_PATH=./Kernel_Prebuilts # Save the kernel image(s) and devicetrees to ./Kernel_Prebuilts/boot hopefully
+          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out headers_install INSTALL_HDR_PATH=./Kernel_Prebuilts/usr # Save the kernel headers to out/Kernel_Prebuilts/usr
+          pwd
+          ls
+          cp ./out/arch/arm64/boot/Image ../Image
+
+      - name: Add KernelPatch
+        run: |
+          echo "Changing to configuration directory: /mnt/kernel_workspace/kernel_platform..."
+          cd "/mnt/kernel_workspace"
+          
+          mkdir kernelpatch && cd kernelpatch
+          
+          echo "Download pre-built tools"
+          wget https://github.com/bmax121/KernelPatch/releases/download/0.11.2/kpimg-android -O kpimg
+          wget https://github.com/bmax121/KernelPatch/releases/download/0.11.2/kptools-linux -O kptools
+          chmod +x kptools
+          
+          echo "Patch Image"
+          cp ../Image ./Image
+          ./kptools -p --image Image --skey "SuperKey@65535" --kpimg ./kpimg --out ./kernel
+
+      - name: Create AnyKernel3
+        run: |
+          echo "Changing to configuration directory: /mnt/kernel_workspace/..."
+          cd "/mnt/kernel_workspace/"
+          
+          git clone https://github.com/Kernel-SU/AnyKernel3 --depth=1
+          
+          echo "Copying Image"
+          cp ./kernelpatch/kernel ./AnyKernel3/Image
+
+      - name: Upload AnyKernel3
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyKernel3-OP12-6.1-APatch-${{ env.BUILD_TIME }}
+          path: /mnt/kernel_workspace/AnyKernel3/*
+
+      - name: Upload Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Image-${{ env.BUILD_TIME }}
+          path: /mnt/kernel_workspace/Image
