@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-kernel:
+  build-kernel-with-mksu:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,23 +28,26 @@ jobs:
           chmod a+x ~/repo
           sudo mv ~/repo /bin/repo
 
-      - name: Download the Pre-built Toolchain
-        run: |
-          cd $GITHUB_WORKSPACE
-          mkdir clang
-          cd clang
-          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r536225.tar.gz 
-          tar axf clang-r536225.tar.gz 
-          rm clang-r536225.tar.gz 
-
       - name: Set Environment Variable
         run: |
           echo "BUILD_TIME=$(date "+%y%m%d%H")" >> $GITHUB_ENV
+          echo "KBUILD_BUILD_USER=7a72" >> $GITHUB_ENV
+          echo "KBUILD_BUILD_HOST=action" >> $GITHUB_ENV
           sudo mkdir -p /mnt/kernel_workspace
           sudo chmod 0777 /mnt/kernel_workspace
           
-          git config --global user.email "build-user@build-host"
-          git config --global user.name "build-user"
+          git config --global user.email "${{ env.KBUILD_BUILD_USER }}@${{ env.KBUILD_BUILD_HOST }}"
+          git config --global user.name "${{ env.KBUILD_BUILD_HOST }}"
+
+      - name: Download the Pre-built Toolchain
+        run: |
+          echo "Changing to directory: /mnt/kernel_workspace..."
+          cd "/mnt/kernel_workspace"
+          mkdir toolchain
+          cd toolchain
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r536225.tar.gz 
+          tar axf clang-r536225.tar.gz 
+          rm clang-r536225.tar.gz 
 
       - name: Sync the Kernel Source Code
         run: |
@@ -58,6 +61,22 @@ jobs:
           rm -rf ./kernel_platform/android/abi_gki_protected_exports_* || echo "No protected exports!"
           sed -i 's/check_defconfig//' kernel_platform/build.config.gki
           sed -i '$s|echo "\$res"|echo "-zsck"|'  kernel_platform/scripts/setlocalversion || true
+
+      - name: Add KernelSU
+        run: |
+          echo "Changing to directory: /mnt/kernel_workspace..."
+          cd "/mnt/kernel_workspace"
+          
+          echo "Adding KernelSU..."
+          #curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/magic/kernel/setup.sh" | bash -s magic
+          curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -
+          cd ./KernelSU/
+          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+          
+          echo "Reverting commit"
+          git revert -m 1 $(git log --grep="remove devpts hook" --pretty=format:"%h") -n
 
       - name: Add Configuration Settings
         run: |
@@ -83,38 +102,21 @@ jobs:
           git commit -s -a -m "build"
           
           echo "Set Env"
-          export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
+          export PATH=/mnt/kernel_workspace/toolchain/bin:$PATH
           type clang
-          type lld
           
           echo "Building the kernel..."
           # python3 build_with_bazel.py -t pineapple gki --config=${{ github.event.inputs.CONFIG }} --lto=${{ github.event.inputs.LTO }} -o "$(pwd)/../out"
           
-          kargs="ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out KBUILD_BUILD_HOST=runner KBUILD_BUILD_USER=7a72"
+          kargs="ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out KBUILD_BUILD_HOST=${{ env.KBUILD_BUILD_HOST }} KBUILD_BUILD_USER=${{ env.KBUILD_BUILD_USER }}"
           make $kargs gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
           make $kargs # Build the kernel itself
-          make $kargs modules_install INSTALL_MOD_PATH=./Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
-          make $kargs install INSTALL_PATH=./Kernel_Prebuilts # Save the kernel image(s) and devicetrees to ./Kernel_Prebuilts/boot hopefully
-          make $kargs headers_install INSTALL_HDR_PATH=./Kernel_Prebuilts/usr # Save the kernel headers to out/Kernel_Prebuilts/usr
+          make $kargs modules_install INSTALL_MOD_PATH=/mnt/kernel_workspace/Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
+          make $kargs install INSTALL_PATH=/mnt/kernel_workspace/Kernel_Prebuilts # Save the kernel image(s) and devicetrees to ./Kernel_Prebuilts/boot hopefully
+          make $kargs headers_install INSTALL_HDR_PATH=/mnt/kernel_workspace/Kernel_Prebuilts/usr # Save the kernel headers to out/Kernel_Prebuilts/usr
           pwd
           ls
-          cp ./out/arch/arm64/boot/Image ../Image
-
-      - name: Add KernelPatch
-        run: |
-          echo "Changing to configuration directory: /mnt/kernel_workspace/kernel_platform..."
-          cd "/mnt/kernel_workspace"
-          
-          mkdir kernelpatch && cd kernelpatch
-          
-          echo "Download pre-built tools"
-          wget https://github.com/bmax121/KernelPatch/releases/download/0.11.2/kpimg-android -O kpimg
-          wget https://github.com/bmax121/KernelPatch/releases/download/0.11.2/kptools-linux -O kptools
-          chmod +x kptools
-          
-          echo "Patch Image"
-          cp ../Image ./Image
-          ./kptools -p --image Image --skey "SuperKey@65535" --kpimg ./kpimg --out ./kernel
+          cp ./out/arch/arm64/boot/Image /mnt/kernel_workspace/Image
 
       - name: Create AnyKernel3
         run: |
@@ -124,12 +126,12 @@ jobs:
           git clone https://github.com/Kernel-SU/AnyKernel3 --depth=1
           
           echo "Copying Image"
-          cp ./kernelpatch/kernel ./AnyKernel3/Image
+          cp /mnt/kernel_workspace/Image ./AnyKernel3/Image
 
       - name: Upload AnyKernel3
         uses: actions/upload-artifact@v4
         with:
-          name: AnyKernel3-OP12-6.1-APatch-${{ env.BUILD_TIME }}
+          name: AnyKernel3-OP12-6.1-MKSU-${{ env.KSUVER }}-${{ env.BUILD_TIME }}
           path: /mnt/kernel_workspace/AnyKernel3/*
 
       - name: Upload Image
