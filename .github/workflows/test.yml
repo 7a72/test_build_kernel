@@ -52,7 +52,7 @@ jobs:
           cd "/mnt/kernel_workspace"
           
           echo "Sync kernel source"
-          git clone --depth 1 https://github.com/OnePlus-12-Development/android_kernel_oneplus_sm8650 -b lineage-22.2 kernel_platform
+          git clone --depth 1 https://github.com/yaap/kernel_oneplus_sm8650.git -b fifteen kernel_platform
           
           echo "Pre-modify"
           rm -rf ./kernel_platform/android/abi_gki_protected_exports_* || echo "No protected exports!"
@@ -90,11 +90,12 @@ jobs:
           echo "Building the kernel..."
           # python3 build_with_bazel.py -t pineapple gki --config=${{ github.event.inputs.CONFIG }} --lto=${{ github.event.inputs.LTO }} -o "$(pwd)/../out"
           
-          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
-          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out # Build the kernel itself
-          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out modules_install INSTALL_MOD_PATH=./Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
-          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out install INSTALL_PATH=./Kernel_Prebuilts # Save the kernel image(s) and devicetrees to ./Kernel_Prebuilts/boot hopefully
-          make ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out headers_install INSTALL_HDR_PATH=./Kernel_Prebuilts/usr # Save the kernel headers to out/Kernel_Prebuilts/usr
+          kargs="ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out KBUILD_BUILD_HOST=runner KBUILD_BUILD_USER=7a72"
+          make $kargs gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
+          make $kargs # Build the kernel itself
+          make $kargs modules_install INSTALL_MOD_PATH=./Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
+          make $kargs install INSTALL_PATH=./Kernel_Prebuilts # Save the kernel image(s) and devicetrees to ./Kernel_Prebuilts/boot hopefully
+          make $kargs headers_install INSTALL_HDR_PATH=./Kernel_Prebuilts/usr # Save the kernel headers to out/Kernel_Prebuilts/usr
           pwd
           ls
           cp ./out/arch/arm64/boot/Image ../Image
