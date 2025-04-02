@@ -55,17 +55,17 @@ jobs:
           cd "/mnt/kernel_workspace"
           
           echo "Sync kernel source"
-          git clone --depth 1 https://github.com/yaap/kernel_oneplus_sm8650.git -b fifteen kernel_platform
+          git clone --depth 1 https://github.com/yaap/kernel_oneplus_sm8650.git -b fifteen kernel
           
           echo "Pre-modify"
-          rm -rf ./kernel_platform/android/abi_gki_protected_exports_* || echo "No protected exports!"
-          sed -i 's/check_defconfig//' kernel_platform/build.config.gki
-          sed -i '$s|echo "\$res"|echo "-zsck"|'  kernel_platform/scripts/setlocalversion || true
+          rm -rf ./kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          sed -i 's/check_defconfig//' kernel/build.config.gki
+          sed -i '$s|echo "\$res"|echo "-zsck"|'  kernel/scripts/setlocalversion || true
 
       - name: Add KernelSU
         run: |
-          echo "Changing to directory: /mnt/kernel_workspace..."
-          cd "/mnt/kernel_workspace"
+          echo "Changing to directory: /mnt/kernel_workspace/kernel..."
+          cd "/mnt/kernel_workspace/kernel"
           
           echo "Adding KernelSU..."
           #curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/magic/kernel/setup.sh" | bash -s magic
@@ -80,8 +80,8 @@ jobs:
 
       - name: Add Configuration Settings
         run: |
-          echo "Changing to directory: /mnt/kernel_workspace/kernel_platform..."
-          cd "/mnt/kernel_workspace/kernel_platform"
+          echo "Changing to directory: /mnt/kernel_workspace/kernel..."
+          cd "/mnt/kernel_workspace/kernel"
 
           echo "Adding configuration settings to gki_defconfig..."
           # echo "CONFIG_PID_NS=y" >> ./arch/arm64/configs/gki_defconfig
@@ -94,14 +94,13 @@ jobs:
 
       - name: Build the Kernel
         run: |
-          echo "Changing to configuration directory: /mnt/kernel_workspace/kernel_platform..."
-          cd "/mnt/kernel_workspace/kernel_platform"
+          echo "Changing to configuration directory: /mnt/kernel_workspace/kernel..."
+          cd "/mnt/kernel_workspace/kernel"
           
-          echo "Clean dirty"
-          git add -A
-          git commit -s -a -m "build"
+          # echo "Clean dirty"
+          # git add -A
+          # git commit -s -a -m "build"
           
-          echo "Set Env"
           export PATH=/mnt/kernel_workspace/toolchain/bin:$PATH
           type clang
           
