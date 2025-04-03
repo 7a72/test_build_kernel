@@ -63,7 +63,7 @@ jobs:
           rm -rf ./android/abi_gki_protected_exports_* || echo "No protected exports!"
           sed -i 's/check_defconfig//' build.config.gki || true
           sed -i '$s|echo "\$res"|echo "-zsck"|' scripts/setlocalversion || true
-          sed -i '/bad_version:/,/^}/{s/return 0/return 1/;}' kernel/module/version.c
+          sed -i '/bad_version:/,/return 0/s/\(.*\)return 0/\1return 1/' kernel/module/version.c
 
       - name: Add KernelSU
         run: |
@@ -86,12 +86,14 @@ jobs:
           echo "Changing to directory: /mnt/kernel_workspace/kernel..."
           cd "/mnt/kernel_workspace/kernel"
 
-          # echo "Adding configuration settings to gki_defconfig..."
-          # echo "CONFIG_PID_NS=y" >> ./arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_POSIX_MQUEUE=y" >> ./arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_IPC_NS=y" >> ./arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_USER_NS=y" >> ./arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_BPF_STREAM_PARSER=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "Adding configuration settings to gki_defconfig..."
+          echo "CONFIG_KSU=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_PID_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_POSIX_MQUEUE=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IPC_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_USER_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_BPF_STREAM_PARSER=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_MODULE_FORCE_LOAD=y" >> ./arch/arm64/configs/gki_defconfig
           # echo "CONFIG_SYSVIPC=y" >> ./arch/arm64/configs/gki_defconfig
           # echo "CONFIG_CGROUP_DEVICE=y" >> ./arch/arm64/configs/gki_defconfig
           
@@ -113,10 +115,10 @@ jobs:
           # python3 build_with_bazel.py -t pineapple gki --config=${{ github.event.inputs.CONFIG }} --lto=${{ github.event.inputs.LTO }} -o "$(pwd)/../out"
           
           kargs="ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out KBUILD_BUILD_HOST=${{ env.KBUILD_BUILD_HOST }} KBUILD_BUILD_USER=${{ env.KBUILD_BUILD_USER }}"
-          # make $kargs gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
-          wget https://raw.githubusercontent.com/7a72/test_build_kernel/refs/heads/main/custom_defconfig 
-          cat custom_defconfig > ./arch/arm64/configs/custom_defconfig
-          make $kargs custom_defconfig
+          make $kargs gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
+          # wget https://raw.githubusercontent.com/7a72/test_build_kernel/refs/heads/main/custom_defconfig 
+          # cat custom_defconfig > ./arch/arm64/configs/custom_defconfig
+          # make $kargs custom_defconfig
           make $kargs # Build the kernel itself
           make $kargs modules_install INSTALL_MOD_PATH=/mnt/kernel_workspace/Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
           make $kargs install INSTALL_PATH=/mnt/kernel_workspace/Kernel_Prebuilts # Save the kernel image(s) and devicetrees to ./Kernel_Prebuilts/boot hopefully
