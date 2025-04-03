@@ -63,6 +63,7 @@ jobs:
           rm -rf ./android/abi_gki_protected_exports_* || echo "No protected exports!"
           sed -i 's/check_defconfig//' build.config.gki || true
           sed -i '$s|echo "\$res"|echo "-zsck"|' scripts/setlocalversion || true
+          sed -i '/bad_version:/,/^}/{s/return 0/return 1/;}' kernel/module/version.c
 
       - name: Add KernelSU
         run: |
