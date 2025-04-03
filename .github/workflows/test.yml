@@ -85,20 +85,14 @@ jobs:
           echo "Changing to directory: /mnt/kernel_workspace/kernel..."
           cd "/mnt/kernel_workspace/kernel"
 
-          wget https://github.com/lateautumn233/Common-Android-Kernel-Tree/commit/a72032ecf33c63d8a4abb64b08c1a0b847c82a32.patch -O cgroup.patch
-          patch -p1 < cgroup.patch
-          wget https://github.com/lateautumn233/Common-Android-Kernel-Tree/commit/0ac686b9e81ba331c2ad9b420fd21262a80daaa4.patch -O sysvipc.patch
-          patch -p1 < sysvipc.patch
-          wget https://raw.githubusercontent.com/wings110/oplus-kernesu-next-susfs/refs/heads/main/patches/gki_defconfig
-          cat gki_defconfig > ./arch/arm64/configs/gki_defconfig
           echo "Adding configuration settings to gki_defconfig..."
-          #echo "CONFIG_PID_NS=y" >> ./arch/arm64/configs/gki_defconfig
-          #echo "CONFIG_POSIX_MQUEUE=y" >> ./arch/arm64/configs/gki_defconfig
-          #echo "CONFIG_IPC_NS=y" >> ./arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_USER_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_PID_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_POSIX_MQUEUE=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_IPC_NS=y" >> ./arch/arm64/configs/gki_defconfig
+          echo "CONFIG_USER_NS=y" >> ./arch/arm64/configs/gki_defconfig
           # echo "CONFIG_BPF_STREAM_PARSER=y" >> ./arch/arm64/configs/gki_defconfig
-          echo "CONFIG_SYSVIPC=y" >> ./arch/arm64/configs/gki_defconfig
-          #echo "CONFIG_CGROUP_DEVICE=y" >> ./arch/arm64/configs/gki_defconfig
+          # echo "CONFIG_SYSVIPC=y" >> ./arch/arm64/configs/gki_defconfig
+          # echo "CONFIG_CGROUP_DEVICE=y" >> ./arch/arm64/configs/gki_defconfig
           
           cat ./arch/arm64/configs/gki_defconfig
 
