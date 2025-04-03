@@ -55,12 +55,14 @@ jobs:
           cd "/mnt/kernel_workspace"
           
           echo "Sync kernel source"
-          git clone https://github.com/yaap/kernel_oneplus_sm8650.git -b 3e3e28c5e89fe67c939af5329a79ecb779834924 kernel
+          git clone https://github.com/yaap/kernel_oneplus_sm8650.git kernel
+          cd kernel 
+          git checkout 3e3e28c5e89fe67c939af5329a79ecb779834924
           
           echo "Pre-modify"
-          rm -rf ./kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
-          sed -i 's/check_defconfig//' kernel/build.config.gki
-          sed -i '$s|echo "\$res"|echo "-zsck"|'  kernel/scripts/setlocalversion || true
+          rm -rf ./android/abi_gki_protected_exports_* || echo "No protected exports!"
+          sed -i 's/check_defconfig//' build.config.gki || true
+          sed -i '$s|echo "\$res"|echo "-zsck"|' scripts/setlocalversion || true
 
       - name: Add KernelSU
         run: |
