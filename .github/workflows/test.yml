@@ -55,13 +55,13 @@ jobs:
           cd "/mnt/kernel_workspace"
           
           echo "Sync kernel source"
-          git clone https://github.com/7a72/kernel_oneplus_waffle.git kernel
+          git clone https://github.com/7a72/kernel_oneplus_waffle.git --depth=1 waffle kernel
           cd kernel
           
           echo "Pre-modify"
           rm -rf ./android/abi_gki_protected_exports_* || echo "No protected exports!"
           sed -i 's/check_defconfig//' build.config.gki || true
-          sed -i '$s|echo "\$res"|echo "-zsck"|' scripts/setlocalversion || true
+          # sed -i '$s|echo "\$res"|echo "-zsck"|' scripts/setlocalversion || true
 
       - name: Add KernelSU
         run: |
