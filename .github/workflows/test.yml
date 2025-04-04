@@ -55,7 +55,7 @@ jobs:
           cd "/mnt/kernel_workspace"
           
           echo "Sync kernel source"
-          git clone --depth=1 https://github.com/7a72/kernel_oneplus_waffle.git waffle kernel
+          git clone --depth=1 https://github.com/7a72/kernel_oneplus_waffle.git -b waffle kernel
           cd kernel
           
           echo "Pre-modify"
