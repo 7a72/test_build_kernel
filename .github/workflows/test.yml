@@ -55,7 +55,8 @@ jobs:
           cd "/mnt/kernel_workspace"
           
           echo "Sync kernel source"
-          git clone --depth=1 https://github.com/7a72/kernel_oneplus_waffle.git -b waffle kernel
+          # git clone --depth=1 https://github.com/7a72/kernel_oneplus_waffle.git -b waffle kernel
+          git clone --depth=1 https://github.com/OnePlus-12-Development/android_kernel_oneplus_sm8650 -b lineage-22.2 kernel
           cd kernel
           
           echo "Pre-modify"
