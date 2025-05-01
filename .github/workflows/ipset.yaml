@@ -62,7 +62,7 @@ jobs:
           echo "Pre-modify"
           rm -rf ./android/abi_gki_protected_exports_* || echo "No protected exports!"
           sed -i 's/check_defconfig//' build.config.gki || true
-          wget https://raw.githubusercontent.com/7a72/test_build_kernel/refs/heads/main/ipset-test -O arch/arm64/configs/ipset_waffle_defconfig
+          wget https://raw.githubusercontent.com/7a72/test_build_kernel/refs/heads/main/zsck_waffle_ipset_defconfig -O arch/arm64/configs/ipset_waffle_defconfig
           # sed -i '$s|echo "\$res"|echo "-zsck"|' scripts/setlocalversion || true
           # sed -i 's/CONFIG_OVO.*//' arch/arm64/configs/zsck_waffle_defconfig
 
