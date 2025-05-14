@@ -45,9 +45,9 @@ jobs:
           cd "/mnt/kernel_workspace"
           mkdir toolchain
           cd toolchain
-          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r536225.tar.gz
-          tar axf clang-r536225.tar.gz 
-          rm clang-r536225.tar.gz 
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz
+          tar axf clang-r547379.tar.gz 
+          rm clang-r547379.tar.gz 
 
       - name: Sync the Kernel Source Code
         run: |
@@ -70,16 +70,16 @@ jobs:
           echo "Changing to directory: /mnt/kernel_workspace/kernel..."
           cd "/mnt/kernel_workspace/kernel"
           
-          #echo "Adding KernelSU..."
-          #curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/magic/kernel/setup.sh" | bash -s magic
-          #curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -
-          #cd ./KernelSU/
-          #KSU_VERSION=$(expr $(git rev-list --count HEAD) "+" 10200)
-          #echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          #sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+          echo "Adding KernelSU..."
+          curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/magic/kernel/setup.sh" | bash -s magic
+          curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -
+          cd ./KernelSU/
+          KSU_VERSION=$(expr $(git rev-list --count HEAD) "+" 10200)
+          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
           
-          #echo "Reverting commit"
-          #git revert -m 1 $(git log --grep="remove devpts hook" --pretty=format:"%h") -n
+          echo "Reverting commit"
+          git revert -m 1 $(git log --grep="remove devpts hook" --pretty=format:"%h") -n
 
       - name: Add Configuration Settings
         run: |
@@ -112,7 +112,7 @@ jobs:
           echo "Building the kernel..."
           # python3 build_with_bazel.py -t pineapple gki --config=${{ github.event.inputs.CONFIG }} --lto=${{ github.event.inputs.LTO }} -o "$(pwd)/../out"
           
-          kargs="ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j1 O=out KBUILD_BUILD_HOST=${{ env.KBUILD_BUILD_HOST }} KBUILD_BUILD_USER=${{ env.KBUILD_BUILD_USER }}"
+          kargs="ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out KBUILD_BUILD_HOST=${{ env.KBUILD_BUILD_HOST }} KBUILD_BUILD_USER=${{ env.KBUILD_BUILD_USER }}"
           make $kargs gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
           # make $kargs zsck_waffle_defconfig
           make $kargs # Build the kernel itself
