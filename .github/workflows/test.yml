@@ -70,16 +70,16 @@ jobs:
           echo "Changing to directory: /mnt/kernel_workspace/kernel..."
           cd "/mnt/kernel_workspace/kernel"
           
-          echo "Adding KernelSU..."
+          #echo "Adding KernelSU..."
           #curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/magic/kernel/setup.sh" | bash -s magic
-          curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -
-          cd ./KernelSU/
-          KSU_VERSION=$(expr $(git rev-list --count HEAD) "+" 10200)
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+          #curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -
+          #cd ./KernelSU/
+          #KSU_VERSION=$(expr $(git rev-list --count HEAD) "+" 10200)
+          #echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          #sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
           
-          echo "Reverting commit"
-          git revert -m 1 $(git log --grep="remove devpts hook" --pretty=format:"%h") -n
+          #echo "Reverting commit"
+          #git revert -m 1 $(git log --grep="remove devpts hook" --pretty=format:"%h") -n
 
       - name: Add Configuration Settings
         run: |
