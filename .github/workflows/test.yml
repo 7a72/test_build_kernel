@@ -71,7 +71,7 @@ jobs:
           cd "/mnt/kernel_workspace/kernel"
           
           echo "Adding KernelSU..."
-          curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/magic/kernel/setup.sh" | bash -s magic
+          # curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/magic/kernel/setup.sh" | bash -s magic
           curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -
           cd ./KernelSU/
           KSU_VERSION=$(expr $(git rev-list --count HEAD) "+" 10200)
