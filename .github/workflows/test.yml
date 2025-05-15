@@ -25,10 +25,8 @@ jobs:
           sudo apt update
           sudo apt install -y python3 git libelf-dev dwarves
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/repo
-          curl https://github.com/7a72/test_build_kernel/raw/main/ikc.sh > ~/ikc.sh
-          chmod a+x ~/repo ~/ikc.sh
+          chmod a+x ~/repo
           sudo mv ~/repo /bin/repo
-          sudo mv ~/ikc.sh /bin/ikc.sh
 
       - name: Set Environment Variable
         run: |
@@ -88,7 +86,7 @@ jobs:
           echo "Changing to directory: /mnt/kernel_workspace/kernel..."
           cd "/mnt/kernel_workspace/kernel"
 
-          echo "Adding configuration settings to gki_defconfig..."
+          # echo "Adding configuration settings to gki_defconfig..."
           # echo "CONFIG_KSU=y" >> ./arch/arm64/configs/gki_defconfig
           # echo "CONFIG_PID_NS=y" >> ./arch/arm64/configs/gki_defconfig
           # echo "CONFIG_POSIX_MQUEUE=y" >> ./arch/arm64/configs/gki_defconfig
@@ -96,22 +94,7 @@ jobs:
           # echo "CONFIG_USER_NS=y" >> ./arch/arm64/configs/gki_defconfig
           # echo "CONFIG_BPF_STREAM_PARSER=y" >> ./arch/arm64/configs/gki_defconfig
           # echo "CONFIG_MODULE_FORCE_LOAD=y" >> ./arch/arm64/configs/gki_defconfig
-          ikc.sh eq CONFIG_LOCALVERSION='"-zsck"' ./arch/arm64/configs/gki_defconfig
-          ikc.sh off CONFIG_LOCALVERSION_AUTO ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_POSIX_MQUEUE ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_POSIX_MQUEUE_SYSCTL ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_IPC_NS ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_USER_NS ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_PID_NS ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_CGROUP_DEVICE ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_CHECKPOINT_RESTORE ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_FHANDLE ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_PACKET_DIAG ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_UNIX_DIAG ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_NETFILTER_XT_TARGET_CHECKSUM ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_NETLINK_DIAG ./arch/arm64/configs/gki_defconfig
-          ikc.sh on CONFIG_PROC_CHILDREN ./arch/arm64/configs/gki_defconfig
-
+          
           # cat ./arch/arm64/configs/gki_defconfig
 
       - name: Build the Kernel
