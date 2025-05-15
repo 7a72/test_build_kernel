@@ -63,7 +63,7 @@ jobs:
           rm -rf ./android/abi_gki_protected_exports_* || echo "No protected exports!"
           sed -i 's/check_defconfig//' build.config.gki || true
           sed -i '$s|echo "\$res"|echo "-zsck"|' scripts/setlocalversion || true
-          # sed -i 's/CONFIG_OVO.*//' arch/arm64/configs/zsck_waffle_defconfig
+          sed -i 's/^#define LINUX_COMPILER.*$/#define LINUX_COMPILER\t\t"0x$KBUILD_BUILD_USER"/' scripts/mkcompile_h || true
 
       - name: Add KernelSU
         run: |
