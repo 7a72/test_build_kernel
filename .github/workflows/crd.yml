@@ -1,4 +1,4 @@
-name: Build OnePlus 12 crd Kernel with mksu
+name: Build OnePlus 12 Kernel with mksu
 
 on:
   workflow_dispatch:
@@ -45,9 +45,9 @@ jobs:
           cd "/mnt/kernel_workspace"
           mkdir toolchain
           cd toolchain
-          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz
-          tar axf clang-r547379.tar.gz 
-          rm clang-r547379.tar.gz 
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r536225.tar.gz
+          tar axf clang-r536225.tar.gz 
+          rm clang-r536225.tar.gz 
 
       - name: Sync the Kernel Source Code
         run: |
@@ -96,6 +96,7 @@ jobs:
           # echo "CONFIG_MODULE_FORCE_LOAD=y" >> ./arch/arm64/configs/gki_defconfig
           
           # cat ./arch/arm64/configs/gki_defconfig
+          wget https://raw.githubusercontent.com/7a72/test_build_kernel/refs/heads/main/zsck_crd_defconfig -O ./arch/arm64/configs/zsck_crd_defconfig
 
       - name: Build the Kernel
         run: |
@@ -113,8 +114,8 @@ jobs:
           # python3 build_with_bazel.py -t pineapple gki --config=${{ github.event.inputs.CONFIG }} --lto=${{ github.event.inputs.LTO }} -o "$(pwd)/../out"
           
           kargs="ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc --all) O=out KBUILD_BUILD_HOST=${{ env.KBUILD_BUILD_HOST }} KBUILD_BUILD_USER=${{ env.KBUILD_BUILD_USER }}"
-          make $kargs gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
-          # make $kargs zsck_waffle_defconfig
+          # make $kargs gki_defconfig vendor/pineapple_GKI.config vendor/oplus/pineapple_GKI.config vendor/oplus/waffle.config # Build the kernel config
+          make $kargs zsck_crd_defconfig
           make $kargs # Build the kernel itself
           make $kargs modules_install INSTALL_MOD_PATH=/mnt/kernel_workspace/Kernel_Prebuilts # Save the kernel modules to out/Kernel_Prebuilts/lib/modules
           make $kargs install INSTALL_PATH=/mnt/kernel_workspace/Kernel_Prebuilts # Save the kernel image(s) and devicetrees to ./Kernel_Prebuilts/boot hopefully
